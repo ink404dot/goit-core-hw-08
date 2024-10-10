@@ -1,6 +1,7 @@
 from collections import UserDict
 from typing import Optional, List, Dict, Tuple, Callable
 from datetime import datetime, timedelta
+import pickle
 
 
 class PhoneValidationError(Exception):
@@ -25,8 +26,7 @@ class BirthdayValidationError(Exception):
 
 
 class ItemNotFoundError(Exception):
-    def __init__(self, item: str =
-                 "") -> None:
+    def __init__(self, item: str = "") -> None:
         self.message = "Not found " + item
         super().__init__(self.message)
 
@@ -72,14 +72,18 @@ class Birthday(Field):
 
     @staticmethod
     def str_to_datetime(value: str) -> bool:
-        return bool(datetime.strptime(value, "%d.%m.%Y"))
+        try:
+            datetime.strptime(value, "%d.%m.%Y")
+            return True
+        except ValueError:
+            return False
 
 
 class Record:
     def __init__(self, name: str):
         self.name = Name(name)
-        self.phones = []
-        self.birthday = None
+        self.phones: List[Phone] = []
+        self.birthday: Optional[Birthday] = None
 
     def add_birthday(self, string):
         self.birthday = Birthday(string)
@@ -155,9 +159,21 @@ class AddressBook(UserDict):
             del self.data[name]
         else:
             raise ItemNotFoundError(name)
+        
+    def save_data(book, filename="addressbook.pkl"):
+        with open(filename, "wb") as f:
+            pickle.dump(book, f)
 
-    def __str__(self) -> str:
-        return '\n'.join(str(record) for record in self.data.values())
+    @classmethod
+    def load_data(cls, filename="addressbook.pkl"):
+        try:
+            with open(filename, "rb") as f:
+                return pickle.load(f)
+        except FileNotFoundError:
+            return cls()
+
+        def __str__(self) -> str:
+            return '\n'.join(str(record) for record in self.data.values())
 
 
 def input_error(func: Callable) -> Callable:
@@ -206,13 +222,12 @@ def change_contact(args: List[str], book: AddressBook) -> str:
 
 
 @input_error
-def add_contact(args, book: AddressBook):
+def add_contact(args: List[str], book: AddressBook) -> str:
     name, phone, = args[0], args[1]
     record = book.find(name)
     record = Record(name)
     book.add_record(record)
     record.add_phone(phone)
-    book.add_record(record)
     return "Contact added."
 
 
@@ -272,8 +287,10 @@ def birthdays(book: AddressBook):
         return '\n'.join([f"{entry['name']} : {entry['birthday']}" for entry in upcoming_birthdays])
 
 
+
+    
 def main():
-    book = AddressBook()
+    book = book = AddressBook.load_data() 
     print("Welcome to the assistant bot!")
     while True:
         user_input = input("Enter a command: ")
@@ -281,6 +298,7 @@ def main():
 
         match command:
             case "close" | "exit":
+                book.save_data(book)
                 print("Good bye!")
                 break
             case "hello":
