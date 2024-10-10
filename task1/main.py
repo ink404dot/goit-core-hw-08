@@ -172,8 +172,8 @@ class AddressBook(UserDict):
         except FileNotFoundError:
             return cls()
 
-        def __str__(self) -> str:
-            return '\n'.join(str(record) for record in self.data.values())
+    def __str__(self) -> str:
+        return '\n'.join(str(record) for record in self.data.values())
 
 
 def input_error(func: Callable) -> Callable:
@@ -290,7 +290,7 @@ def birthdays(book: AddressBook):
 
     
 def main():
-    book = book = AddressBook.load_data() 
+    book = AddressBook.load_data() 
     print("Welcome to the assistant bot!")
     while True:
         user_input = input("Enter a command: ")
@@ -298,7 +298,7 @@ def main():
 
         match command:
             case "close" | "exit":
-                book.save_data(book)
+                book.save_data()
                 print("Good bye!")
                 break
             case "hello":
