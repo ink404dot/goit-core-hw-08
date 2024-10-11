@@ -222,12 +222,16 @@ def change_contact(args: List[str], book: AddressBook) -> str:
 
 
 @input_error
-def add_contact(args: List[str], book: AddressBook) -> str:
+def add_contact(args, book: AddressBook):
     name, phone, = args[0], args[1]
     record = book.find(name)
-    record = Record(name)
-    book.add_record(record)
-    record.add_phone(phone)
+    if record:
+        record.add_phone(phone)
+        return "Contact updated."
+    else:
+        record = Record(name)
+        book.add_record(record)
+        record.add_phone(phone)
     return "Contact added."
 
 
